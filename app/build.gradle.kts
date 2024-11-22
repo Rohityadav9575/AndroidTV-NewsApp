@@ -71,4 +71,6 @@ dependencies {
     implementation (libs.compose.ui) // Basic UI components
     implementation (libs.material3)  // Material 3 components for Text, etc.
 
+    // coil library for images
+    implementation("io.coil-kt:coil-compose:2.0.0")
 }
