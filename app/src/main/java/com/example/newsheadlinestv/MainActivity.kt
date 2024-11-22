@@ -1,10 +1,13 @@
 package com.example.newsheadlinestv
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +24,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.tv.material3.CardColors
@@ -49,9 +55,13 @@ class MainActivity : ComponentActivity() {
         var isLoading by remember { mutableStateOf(false) } // Track loading state
         var refreshTrigger by remember { mutableStateOf(false) } // Trigger for refresh
         val cardColors = CardDefaults.cardColors(
-            containerColor = Color.DarkGray,
+            containerColor = Color.Black,
             contentColor = Color.White
         )
+        var focusedIndex by remember { mutableIntStateOf(-1) }
+        // Initialize focusRequesters list after data is fetched
+        var focusRequesters by remember { mutableStateOf<List<FocusRequester>>(emptyList()) }
+
         val apiService = RetrofitInstance.api
 
         // Function to fetch news (does not contain LaunchedEffect)
@@ -92,6 +102,12 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             fetchNews()
         }
+        // Request focus for the first item when data is loaded
+        LaunchedEffect(Unit) {
+            if (focusRequesters.isNotEmpty()) {
+                focusRequesters[0].requestFocus()
+            }
+        }
 
         LazyColumn(
             modifier = Modifier
@@ -106,10 +122,29 @@ class MainActivity : ComponentActivity() {
                 }
         ) {
             itemsIndexed(headlines) { index, headline ->
+
+                val isFirstItem = index == 0
+
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .focusable()
+                        .padding(vertical = 8.dp)
+
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                focusedIndex = index
+                                Log.d("FocusIndex","focus card index: $focusedIndex")
+                            }else{
+                                Log.d("FocusIndex","focus card is not focused")
+                            }
+                        }
+
+                        .border(
+                            width = if (focusedIndex == index) 4.dp else 0.dp, // Highlight focused card
+                            color = if (focusedIndex == index) Color.Yellow else Color.Transparent,
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        ),
                     elevation = CardDefaults.cardElevation(4.dp),
                     colors = cardColors
                 ) {
@@ -143,6 +178,7 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                 }
+
             }
 
             // Show loading indicator if data is being refreshed

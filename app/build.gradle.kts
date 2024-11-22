@@ -73,4 +73,11 @@ dependencies {
 
     // coil library for images
     implementation("io.coil-kt:coil-compose:2.0.0")
+
+    //leanback
+    val leanback_version = "1.2.0-alpha04"
+
+    implementation("androidx.leanback:leanback:$leanback_version")
+
+
 }
